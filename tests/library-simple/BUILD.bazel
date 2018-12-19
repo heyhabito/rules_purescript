@@ -7,6 +7,8 @@ load(
 
 purescript_library(
     name = "library-simple",
-    srcs = ["Lib.purs"],
+    srcs = [
+        "LibSimple.purs",
+    ],
     visibility = ["//visibility:public"],
 )

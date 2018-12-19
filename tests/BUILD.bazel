@@ -14,12 +14,23 @@ load(
 purescript_toolchain(
     name = "purescript",
     version = "0.12.1",
-    tools = "@purescript//:bin",
+    tools = [
+        "@purescript//:bin",
+        "@rsync//:bin",
+        "@tar//:bin",
+    ],
 )
 
 rule_test(
     name = "test-library-simple",
     size = "small",
-    generates = ["Lib.js"],
+    generates = ["library-simple.purs-package"],
     rule = "//tests/library-simple",
+)
+
+rule_test(
+    name = "test-library-dependencies",
+    size = "small",
+    generates = ["library-dependencies.purs-package"],
+    rule = "//tests/library-dependencies",
 )

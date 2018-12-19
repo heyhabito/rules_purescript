@@ -15,6 +15,11 @@ load(
     "nixpkgs_package",
 )
 
+load(
+    "//purescript:repositories.bzl",
+    "purescript_repositories",
+)
+
 nixpkgs_local_repository(
     name = "nixpkgs",
     nix_file = "//nixpkgs:default.nix",
@@ -25,5 +30,19 @@ nixpkgs_package(
     repositories = {"nixpkgs": "@nixpkgs//:default.nix"},
     attribute_path = "purescript",
 )
+
+nixpkgs_package(
+    name = "rsync",
+    repositories = {"nixpkgs": "@nixpkgs//:default.nix"},
+    attribute_path = "rsync",
+)
+
+nixpkgs_package(
+    name = "tar",
+    repositories = {"nixpkgs": "@nixpkgs//:default.nix"},
+    attribute_path = "gnutar",
+)
+
+purescript_repositories()
 
 register_toolchains("//tests:purescript")

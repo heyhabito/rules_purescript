@@ -1,0 +1,25 @@
+package(default_testonly = 1)
+
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_library",
+)
+
+purescript_library(
+    name = "library-dependencies",
+    srcs = [
+        "LibDeps.purs",
+    ],
+    deps = [
+        ":library-dependencies-other",
+        "//tests/library-simple",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+purescript_library(
+    name = "library-dependencies-other",
+    srcs = [
+        "LibDeps/Other.purs",
+    ],
+)
