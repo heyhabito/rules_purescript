@@ -1,0 +1,12 @@
+package(default_testonly = 1)
+
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_library",
+)
+
+purescript_library(
+    name = "library-simple",
+    srcs = ["Lib.purs"],
+    visibility = ["//visibility:public"],
+)

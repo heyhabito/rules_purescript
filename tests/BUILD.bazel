@@ -1,0 +1,25 @@
+package(default_testonly = 1)
+
+load(
+    "@bazel_tools//tools/build_rules:test_rules.bzl",
+    "rule_test",
+)
+
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_library",
+    "purescript_toolchain",
+)
+
+purescript_toolchain(
+    name = "purescript",
+    version = "0.12.1",
+    tools = "@purescript//:bin",
+)
+
+rule_test(
+    name = "test-library-simple",
+    size = "small",
+    generates = ["Lib.js"],
+    rule = "//tests/library-simple",
+)
