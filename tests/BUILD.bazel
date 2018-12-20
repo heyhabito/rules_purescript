@@ -7,7 +7,6 @@ load(
 
 load(
     "@com_habito_rules_purescript//purescript:purescript.bzl",
-    "purescript_library",
     "purescript_toolchain",
 )
 
@@ -53,4 +52,18 @@ rule_test(
     size = "small",
     generates = ["library-foreign.purs-package"],
     rule = "//tests/library-foreign",
+)
+
+rule_test(
+    name = "test-bundle-simple",
+    size = "small",
+    generates = ["bundle-simple.js"],
+    rule = "//tests/bundle-simple",
+)
+
+rule_test(
+    name = "test-bundle-main",
+    size = "small",
+    generates = ["bundle-main.js"],
+    rule = "//tests/bundle-main",
 )

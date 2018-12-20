@@ -37,6 +37,13 @@ load(
 )
 
 _ATTRS = struct(
+    entry_point_module = attr.string(
+        doc = "The name of the module to be used as an entry point",
+        mandatory = True,
+    ),
+    main_module = attr.string(
+        doc = "If supplied, code will be generated to run the `main` function in this module",
+    ),
     srcs = attr.label_list(
         allow_files = [
             ".purs",
@@ -61,14 +68,94 @@ _ATTRS = struct(
     ),
 )
 
+PureScriptBundleInfo = provider(
+    doc = "Information about a PureScript bundle",
+    fields = [
+        "bundle",
+    ],
+)
+
 def _purescript_bundle_impl(ctx):
     """Implements the purescript_bundle rule"""
 
-    pass
+    ps = purescript_context(ctx)
+    purs = ps.tools.purs
+    tar = ps.tools.tar
+
+    entry_point_module = ctx.attr.entry_point_module
+    bundle = ctx.outputs.bundle
+
+    bundle_package = ctx.actions.declare_file("bundle.purs-package")
+
+    ctx_p = _purescript_process_ctx(ps, ctx)
+
+    _purescript_build_library(
+        ctx,
+        mnemonic = "PureScriptBuildBundle",
+        progress_message = "PureScriptBuildBundle {}".format(ctx.label),
+        purs = purs,
+        tar = tar,
+        ctx_p = ctx_p,
+        package = bundle_package,
+    )
+
+    if ctx.attr.main_module:
+        main_argument = "--main {}".format(ctx.attr.main_module)
+    else:
+        main_argument = ""
+
+    ctx.actions.run_shell(
+        mnemonic = "PureScriptBundle",
+        progress_message = "PureScriptBundle {}".format(ctx.label),
+        inputs = [bundle_package],
+        outputs = [bundle],
+        tools = [
+            purs,
+            tar,
+        ],
+        command = """
+            set -o errexit
+
+            package_directory=$(mktemp -d)
+
+            {tar} \
+                --extract \
+                --file {bundle_package} \
+                --directory $package_directory
+
+            {purs} bundle $package_directory/output/*/*.js \
+                --module {entry_point_module} \
+                {main_argument} \
+                --output {bundle} > /dev/null
+
+            rm -rf $package_directory
+        """.format(
+            tar = tar.path,
+            bundle_package = bundle_package.path,
+            purs = purs.path,
+            entry_point_module = entry_point_module,
+            main_argument = main_argument,
+            bundle = bundle.path,
+        ),
+    )
+
+    return [
+        PureScriptBundleInfo(
+            bundle = bundle,
+        )
+    ]
 
 purescript_bundle = rule(
     implementation = _purescript_bundle_impl,
     attrs = {
+        "entry_point_module": _ATTRS.entry_point_module,
+        "main_module": _ATTRS.main_module,
+        "srcs": _ATTRS.srcs,
+        "foreign_srcs": _ATTRS.foreign_srcs,
+        "deps": _ATTRS.deps,
+    },
+    outputs = {
+        "bundle": "%{name}.js",
     },
     toolchains = [
         "@com_habito_rules_purescript//purescript:toolchain_type",
@@ -97,14 +184,43 @@ def _purescript_library_impl(ctx):
 
     ctx_p = _purescript_process_ctx(ps, ctx)
 
-    ctx.actions.run_shell(
+    _purescript_build_library(
+        ctx,
         mnemonic = "PureScriptBuildLibrary",
         progress_message = "PureScriptBuildLibrary {}".format(ctx.label),
+        purs = purs,
+        tar = tar,
+        ctx_p = ctx_p,
+        package = package,
+    )
+
+    return [
+        PureScriptLibraryInfo(
+            package = package,
+            srcs = ctx_p.srcs,
+            foreign_srcs = ctx_p.foreign_srcs,
+            transitive_srcs = ctx_p.transitive_srcs,
+            transitive_foreign_srcs = ctx_p.transitive_foreign_srcs,
+        )
+    ]
+
+def _purescript_build_library(
+    ctx,
+    mnemonic,
+    progress_message,
+    purs,
+    tar,
+    ctx_p,
+    package):
+
+    ctx.actions.run_shell(
+        mnemonic = mnemonic,
+        progress_message = progress_message,
         inputs = ctx_p.transitive_srcs + ctx_p.transitive_foreign_srcs,
         outputs = [package],
         tools = [
             purs,
-            tar
+            tar,
         ],
         command = """
             set -o errexit
@@ -125,20 +241,10 @@ def _purescript_library_impl(ctx):
         """.format(
             purs = purs.path,
             tar = tar.path,
-            package = shell.quote(package.path),
             transitive_src_path_words = ctx_p.transitive_src_path_words,
+            package = shell.quote(package.path),
         ),
     )
-
-    return [
-        PureScriptLibraryInfo(
-            package = package,
-            srcs = ctx_p.srcs,
-            foreign_srcs = ctx_p.foreign_srcs,
-            transitive_srcs = ctx_p.transitive_srcs,
-            transitive_foreign_srcs = ctx_p.transitive_foreign_srcs,
-        )
-    ]
 
 def _purescript_process_ctx(ps, ctx):
     """Processes a rule's context, building a list of inputs and transitive inputs"""

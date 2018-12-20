@@ -1,0 +1,15 @@
+package(default_testonly = 1)
+
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_bundle",
+)
+
+purescript_bundle(
+    name = "bundle-simple",
+    entry_point_module = "Main",
+    srcs = [
+        "Main.purs",
+    ],
+    visibility = ["//visibility:public"],
+)
