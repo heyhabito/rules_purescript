@@ -34,3 +34,10 @@ rule_test(
     generates = ["library-dependencies.purs-package"],
     rule = "//tests/library-dependencies",
 )
+
+rule_test(
+    name = "test-library-prefix",
+    size = "small",
+    generates = ["library-prefix.purs-package"],
+    rule = "//tests/library-prefix",
+)

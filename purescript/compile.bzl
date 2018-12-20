@@ -16,13 +16,13 @@ in which Lib.purs and Lib2.purs define modules Lib and Lib2 and Lib3.purs
 defines a module Lib3 which depends on Lib and Lib2. If Lib.purs and Lib2.purs
 are compiled (e.g. to Lib.js and Lib2.js), it is not possible to compile Lib3
 by providing the compiler with Lib.js, Lib2.js and Lib3.purs -- we must instead
-pass Lib.purs, Lib2.purs and Lib3.purs all together, compiling the first two
-modules again.
+pass Lib.purs, Lib2.purs and Lib3.purs all together. That said, if the compiler
+identifies that the sources given have compiled outputs already, it will
+avoid recompilation.
 
 Consequently, the strategy we take for building PureScript compilation rules is
-not to compile anything until an executable bundle is actually required --
-library "compilation" simply requires bundling sources for any future
-all-at-once compilation.
+both to compile sources _and package the outputs with those same sources_ so
+that any future compilations will have both sets of files available.
 """
 
 load(
@@ -60,12 +60,13 @@ def _purescript_library_impl(ctx):
     """Implements the purescript_library rule"""
 
     ps = purescript_context(ctx)
+    purs = ps.tools.purs
     rsync = ps.tools.rsync
     tar = ps.tools.tar
 
     package = ctx.outputs.package
 
-    inputs = _purescript_process_inputs(ctx)
+    inputs = _purescript_process_inputs(ps, ctx)
 
     ctx.actions.run_shell(
         mnemonic = "PureScriptBuildLibrary",
@@ -73,6 +74,7 @@ def _purescript_library_impl(ctx):
         inputs = inputs.combined,
         outputs = [package],
         tools = [
+            purs,
             rsync,
             tar
         ],
@@ -80,7 +82,6 @@ def _purescript_library_impl(ctx):
             set -o errexit
 
             package_directory=$(mktemp -d)
-            file_list=$(mktemp)
 
             for p in "" {package_path_words}
             do
@@ -88,33 +89,37 @@ def _purescript_library_impl(ctx):
                 then
                     {tar} \
                         --extract \
-                        --verbose \
                         --file $p \
-                        --directory $package_directory >> $file_list
+                        --directory $package_directory
                 fi
             done
-            cat >> $file_list <<EOF
-{src_relative_path_lines}
-EOF
 
-            {rsync} -LR {src_relative_path_words} $package_directory
+            {purs} compile {src_path_words} \
+                --output $package_directory/output > /dev/null 2>&1
+
+            {rsync} \
+                --copy-links \
+                --relative \
+                {src_relative_path_words} $package_directory > /dev/null 2>&1
 
             {tar} \
                 --create \
                 --file {package} \
                 --directory $package_directory \
                 --dereference \
-                --files-from $file_list
+                .
 
-            rm -rf $file_list $package_directory
+            rm -rf $package_directory
         """.format(
+            purs = purs.path,
             rsync = rsync.path,
             tar = tar.path,
 
             package = shell.quote(package.path),
             package_path_words = inputs.package_path_words,
 
-            src_directory = inputs.src_directory,
+            src_root = ps.src_root,
+            src_path_words = inputs.src_path_words,
             src_relative_path_words = inputs.src_relative_path_words,
             src_relative_path_lines = inputs.src_relative_path_lines,
         ),
@@ -148,7 +153,7 @@ purescript_bundle = rule(
     ],
 )
 
-def _purescript_process_inputs(ctx):
+def _purescript_process_inputs(ps, ctx):
     """Splits a rule's inputs into dependency packages and raw sources
 
     Returns:
@@ -161,8 +166,8 @@ def _purescript_process_inputs(ctx):
                   A space-delimited string of dependency package paths
             * `srcs`:
                   A list of source `File`s
-            * `src_directory`:
-                  The directory which relative source paths are relative to
+            * `src_path_words`:
+                  A space-delimited string of source file paths
             * `src_relative_path_words`:
                   A space-delimited string of relative source file paths
             * `src_relative_path_lines`:
@@ -175,43 +180,31 @@ def _purescript_process_inputs(ctx):
     package_path_words = ""
 
     srcs = []
-    src_directory = ctx.label.package
+    src_path_words = ""
     src_relative_path_words = ""
     src_relative_path_lines = ""
 
-    for d in ctx.files.deps:
+    for d in ctx.files.deps + ctx.files.srcs:
         combined.append(d)
         if d.extension == "purs-package":
             packages.append(d)
             package_path_words += " {}".format(shell.quote(d.path))
         else:
             srcs.append(d)
-            src_relative_path = paths.relativize(d.path, ctx.label.package)
+            src_path_words += " {}".format(d.path)
+            src_relative_path = paths.relativize(d.path, ps.src_root)
             src_relative_path_words += " {}".format(
-                shell.quote(src_directory + "/./" + src_relative_path),
+                shell.quote(ps.src_root + "/./" + src_relative_path),
             )
 
             src_relative_path_lines += "\n{}".format(src_relative_path)
-
-    # Currently the "srcs" attribute is limited to only allow .purs files, so
-    # it is guaranteed not to contain any packages and we can thus add it
-    # wholesale to our list of sources.
-    for s in ctx.files.srcs:
-        combined.append(s)
-        srcs.append(s)
-        src_relative_path = paths.relativize(s.path, ctx.label.package)
-        src_relative_path_words += " {}".format(
-            shell.quote(src_directory + "/./" + src_relative_path),
-        )
-
-        src_relative_path_lines += "\n{}".format(src_relative_path)
 
     return struct(
         combined = combined,
         packages = packages,
         package_path_words = package_path_words,
         srcs = srcs,
-        src_directory = src_directory,
+        src_path_words = src_path_words,
         src_relative_path_words = src_relative_path_words,
         src_relative_path_lines = src_relative_path_lines,
     )
