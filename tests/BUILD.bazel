@@ -16,7 +16,6 @@ purescript_toolchain(
     version = "0.12.1",
     tools = [
         "@purescript//:bin",
-        "@rsync//:bin",
         "@tar//:bin",
     ],
 )
@@ -47,4 +46,11 @@ rule_test(
     size = "small",
     generates = ["library-transitive.purs-package"],
     rule = "//tests/library-transitive",
+)
+
+rule_test(
+    name = "test-library-foreign",
+    size = "small",
+    generates = ["library-foreign.purs-package"],
+    rule = "//tests/library-foreign",
 )

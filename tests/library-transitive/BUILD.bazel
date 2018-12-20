@@ -12,6 +12,7 @@ purescript_library(
     deps = [
         ":library-transitive-other",
         "//tests/library-dependencies",
+        "//tests/library-foreign",
     ],
     visibility = ["//visibility:public"],
 )

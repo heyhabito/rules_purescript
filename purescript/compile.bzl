@@ -36,46 +36,74 @@ load(
     "purescript_context",
 )
 
-_PURESCRIPT_COMMON_ATTRS = {
-    "srcs": attr.label_list(
+_ATTRS = struct(
+    srcs = attr.label_list(
         allow_files = [
             ".purs",
         ],
         doc = "The PureScript source files that make up this target",
         mandatory = True,
     ),
-    "src_strip_prefix": attr.string(
+    foreign_srcs = attr.label_list(
+        allow_files = [
+            ".js",
+        ],
+        doc = "The JavaScript source files that provide foreign function interfaces for this target",
+    ),
+    src_strip_prefix = attr.string(
         doc = "The directory in which the PureScript module hierarchy starts",
     ),
-    "deps": attr.label_list(
+    deps = attr.label_list(
         allow_files = [
-            ".purs",
             ".purs-package",
         ],
         doc = "A list of other PureScript libraries that this target depends on",
     ),
-}
+)
+
+def _purescript_bundle_impl(ctx):
+    """Implements the purescript_bundle rule"""
+
+    pass
+
+purescript_bundle = rule(
+    implementation = _purescript_bundle_impl,
+    attrs = {
+    },
+    toolchains = [
+        "@com_habito_rules_purescript//purescript:toolchain_type",
+    ],
+)
+
+PureScriptLibraryInfo = provider(
+    doc = "Information about a PureScript library",
+    fields = [
+        "package",
+        "srcs",
+        "foreign_srcs",
+        "transitive_srcs",
+        "transitive_foreign_srcs",
+    ],
+)
 
 def _purescript_library_impl(ctx):
     """Implements the purescript_library rule"""
 
     ps = purescript_context(ctx)
     purs = ps.tools.purs
-    rsync = ps.tools.rsync
     tar = ps.tools.tar
 
     package = ctx.outputs.package
 
-    inputs = _purescript_process_inputs(ps, ctx)
+    ctx_p = _purescript_process_ctx(ps, ctx)
 
     ctx.actions.run_shell(
         mnemonic = "PureScriptBuildLibrary",
         progress_message = "PureScriptBuildLibrary {}".format(ctx.label),
-        inputs = inputs.combined,
+        inputs = ctx_p.transitive_srcs + ctx_p.transitive_foreign_srcs,
         outputs = [package],
         tools = [
             purs,
-            rsync,
             tar
         ],
         command = """
@@ -83,24 +111,8 @@ def _purescript_library_impl(ctx):
 
             package_directory=$(mktemp -d)
 
-            for p in "" {package_path_words}
-            do
-                if [[ -f $p ]]
-                then
-                    {tar} \
-                        --extract \
-                        --file $p \
-                        --directory $package_directory
-                fi
-            done
-
-            {purs} compile {src_path_words} \
-                --output $package_directory/output > /dev/null 2>&1
-
-            {rsync} \
-                --copy-links \
-                --relative \
-                {src_relative_path_words} $package_directory > /dev/null 2>&1
+            {purs} compile {transitive_src_path_words} \
+                --output $package_directory/output > /dev/null
 
             {tar} \
                 --create \
@@ -112,24 +124,81 @@ def _purescript_library_impl(ctx):
             rm -rf $package_directory
         """.format(
             purs = purs.path,
-            rsync = rsync.path,
             tar = tar.path,
-
             package = shell.quote(package.path),
-            package_path_words = inputs.package_path_words,
-
-            src_root = ps.src_root,
-            src_path_words = inputs.src_path_words,
-            src_relative_path_words = inputs.src_relative_path_words,
-            src_relative_path_lines = inputs.src_relative_path_lines,
+            transitive_src_path_words = ctx_p.transitive_src_path_words,
         ),
+    )
+
+    return [
+        PureScriptLibraryInfo(
+            package = package,
+            srcs = ctx_p.srcs,
+            foreign_srcs = ctx_p.foreign_srcs,
+            transitive_srcs = ctx_p.transitive_srcs,
+            transitive_foreign_srcs = ctx_p.transitive_foreign_srcs,
+        )
+    ]
+
+def _purescript_process_ctx(ps, ctx):
+    """Processes a rule's context, building a list of inputs and transitive inputs"""
+
+    deps_p = _purescript_process_deps(ctx)
+
+    packages = depset(deps_p.packages)
+    srcs = depset(ctx.files.srcs)
+    foreign_srcs = depset(ctx.files.foreign_srcs)
+
+    transitive_srcs = depset(
+        items = ctx.files.srcs,
+        transitive = deps_p.transitive_srcs,
+    )
+
+    transitive_srcs_list = transitive_srcs.to_list()
+    transitive_src_path_words = " ".join([s.path for s in transitive_srcs_list])
+
+    transitive_foreign_srcs = depset(
+        items = ctx.files.foreign_srcs,
+        transitive = deps_p.transitive_foreign_srcs,
+    )
+
+    return struct(
+        packages = packages,
+        srcs = srcs,
+        foreign_srcs = foreign_srcs,
+        transitive_srcs = transitive_srcs,
+        transitive_src_path_words = transitive_src_path_words,
+        transitive_foreign_srcs = transitive_foreign_srcs,
+    )
+
+def _purescript_process_deps(ctx):
+    """Aggregates the transitive information records of a rule's dependencies"""
+
+    packages = []
+    transitive_srcs = []
+    transitive_foreign_srcs = []
+
+    for d in ctx.attr.deps:
+        if d[PureScriptLibraryInfo]:
+            info = d[PureScriptLibraryInfo]
+            packages.append(info.package)
+            transitive_srcs.append(info.transitive_srcs)
+            transitive_foreign_srcs.append(info.transitive_foreign_srcs)
+
+    return struct(
+        packages = packages,
+        transitive_srcs = transitive_srcs,
+        transitive_foreign_srcs = transitive_foreign_srcs,
     )
 
 purescript_library = rule(
     implementation = _purescript_library_impl,
-    attrs = dict(
-        _PURESCRIPT_COMMON_ATTRS,
-    ),
+    attrs = {
+        "srcs": _ATTRS.srcs,
+        "foreign_srcs": _ATTRS.foreign_srcs,
+        "src_strip_prefix": _ATTRS.src_strip_prefix,
+        "deps": _ATTRS.deps,
+    },
     outputs = {
         "package": "%{name}.purs-package",
     },
@@ -137,74 +206,3 @@ purescript_library = rule(
         "@com_habito_rules_purescript//purescript:toolchain_type",
     ],
 )
-
-def _purescript_bundle_impl(ctx):
-    """Implements the purescript_bundle rule"""
-
-    pass
-
-purescript_bundle = rule(
-    implementation = _purescript_bundle_impl,
-    attrs = dict(
-        _PURESCRIPT_COMMON_ATTRS,
-    ),
-    toolchains = [
-        "@com_habito_rules_purescript//purescript:toolchain_type",
-    ],
-)
-
-def _purescript_process_inputs(ps, ctx):
-    """Splits a rule's inputs into dependency packages and raw sources
-
-    Returns:
-        A struct containing the following fields:
-            * `combined`:
-                  A list of all dependency package and raw source `File`s
-            * `packages`:
-                  A list of package `File`s
-            * `package_path_words`:
-                  A space-delimited string of dependency package paths
-            * `srcs`:
-                  A list of source `File`s
-            * `src_path_words`:
-                  A space-delimited string of source file paths
-            * `src_relative_path_words`:
-                  A space-delimited string of relative source file paths
-            * `src_relative_path_lines`:
-                  A line-broken string of relative source file paths
-    """
-
-    combined = []
-
-    packages = []
-    package_path_words = ""
-
-    srcs = []
-    src_path_words = ""
-    src_relative_path_words = ""
-    src_relative_path_lines = ""
-
-    for d in ctx.files.deps + ctx.files.srcs:
-        combined.append(d)
-        if d.extension == "purs-package":
-            packages.append(d)
-            package_path_words += " {}".format(shell.quote(d.path))
-        else:
-            srcs.append(d)
-            src_path_words += " {}".format(d.path)
-            src_relative_path = paths.relativize(d.path, ps.src_root)
-            src_relative_path_words += " {}".format(
-                shell.quote(ps.src_root + "/./" + src_relative_path),
-            )
-
-            src_relative_path_lines += "\n{}".format(src_relative_path)
-
-    return struct(
-        combined = combined,
-        packages = packages,
-        package_path_words = package_path_words,
-        srcs = srcs,
-        src_path_words = src_path_words,
-        src_relative_path_words = src_relative_path_words,
-        src_relative_path_lines = src_relative_path_lines,
-    )

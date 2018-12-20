@@ -2,7 +2,6 @@
 
 _PURESCRIPT_TOOLS = [
     "purs",
-    "rsync",
     "tar",
 ]
 

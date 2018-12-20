@@ -32,12 +32,6 @@ nixpkgs_package(
 )
 
 nixpkgs_package(
-    name = "rsync",
-    repositories = {"nixpkgs": "@nixpkgs//:default.nix"},
-    attribute_path = "rsync",
-)
-
-nixpkgs_package(
     name = "tar",
     repositories = {"nixpkgs": "@nixpkgs//:default.nix"},
     attribute_path = "gnutar",

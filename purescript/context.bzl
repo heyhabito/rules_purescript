@@ -6,6 +6,7 @@ load(
 )
 
 PureScriptContext = provider(
+    doc = "Information about a PureScript build context/environment",
     fields = [
         "src_root",
         "toolchain",

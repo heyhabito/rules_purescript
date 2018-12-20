@@ -1,0 +1,32 @@
+package(default_testonly = 1)
+
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_library",
+)
+
+purescript_library(
+    name = "library-foreign",
+    src_strip_prefix = "src",
+    srcs = [
+        "src/LibForeign.purs",
+    ],
+    foreign_srcs = [
+        "src/LibForeign.js",
+    ],
+    deps = [
+        ":library-foreign-other",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+purescript_library(
+    name = "library-foreign-other",
+    src_strip_prefix = "src-other",
+    srcs = [
+        "src-other/LibForeignOther.purs",
+    ],
+    foreign_srcs = [
+        "src-other/LibForeignOther.js",
+    ],
+)
