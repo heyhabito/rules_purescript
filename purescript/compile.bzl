@@ -152,6 +152,7 @@ purescript_bundle = rule(
         "main_module": _ATTRS.main_module,
         "srcs": _ATTRS.srcs,
         "foreign_srcs": _ATTRS.foreign_srcs,
+        "src_strip_prefix": _ATTRS.src_strip_prefix,
         "deps": _ATTRS.deps,
     },
     outputs = {

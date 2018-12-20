@@ -1,0 +1,41 @@
+package(default_testonly = 1)
+
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_bundle",
+    "purescript_library",
+)
+
+purescript_bundle(
+    name = "bundle-dependencies",
+    entry_point_module = "Main",
+    main_module = "Main",
+    src_strip_prefix = "main",
+    srcs = [
+        "main/Main.purs",
+    ],
+    deps = [
+        ":dep1",
+        ":dep2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+purescript_library(
+    name = "dep1",
+    src_strip_prefix = "dep1",
+    srcs = [
+        "dep1/Dep1.purs",
+    ],
+)
+
+purescript_library(
+    name = "dep2",
+    src_strip_prefix = "dep2",
+    srcs = [
+        "dep2/Dep2.purs",
+    ],
+    foreign_srcs = [
+        "dep2/Dep2.js",
+    ],
+)
