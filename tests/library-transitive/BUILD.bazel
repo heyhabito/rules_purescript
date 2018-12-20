@@ -1,0 +1,23 @@
+package(default_testonly = 1)
+
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_library",
+)
+
+purescript_library(
+    name = "library-transitive",
+    src_strip_prefix = "src",
+    srcs = glob(["src/**/*.purs"]),
+    deps = [
+        ":library-transitive-other",
+        "//tests/library-dependencies",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+purescript_library(
+    name = "library-transitive-other",
+    src_strip_prefix = "src-other",
+    srcs = glob(["src-other/**/*.purs"]),
+)
