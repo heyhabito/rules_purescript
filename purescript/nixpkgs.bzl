@@ -15,6 +15,8 @@ def purescript_nixpkgs_packageset(
     repositories = {},
     **kwargs):
 
+    """Defines a set of external repositories for a Nixpkgs-backed PureScript package set"""
+
     repositories = dicts.add(
         {
             "bazel_purescript_wrapper": "@com_habito_rules_purescript//purescript:nix/default.nix",
@@ -47,6 +49,8 @@ def purescript_nixpkgs_package(
     attribute_path,
     repositories = {},
     **kwargs):
+
+    """Defines an external repository for a PureScript package supplied by Nixpkgs"""
 
     repositories = dicts.add(
         {
@@ -90,6 +94,8 @@ targets()
     )
 
 def _purescript_nixpkgs_nixopts(packageset_name, nix_file, repositories):
+    """Creates a set of nix-build arguments from the given arguments"""
+
     repositories_nix_set = "{"
     for name, path in repositories.items():
         repositories_nix_set += "\"{name}\" = \"{path}\";".format(
@@ -110,6 +116,8 @@ def _purescript_nixpkgs_nixopts(packageset_name, nix_file, repositories):
     ]
 
 def _purescript_nixpkgs_packageset_aliases(repository_ctx):
+    """Implements the purescript_nixpkgs_packageset_aliases repository rule"""
+
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
