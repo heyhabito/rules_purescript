@@ -4,9 +4,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
-    sha256 = "e08bfff0e3413cae8549df72e3fce36f7b0e2369e864dfe41d3307ef100500f8",
-    strip_prefix = "rules_nixpkgs-0.4.1",
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.4.1.tar.gz"],
+    sha256 = "fe9a2b6b92df33dd159d22f9f3abc5cea2543b5da66edbbee128245c75504e41",
+    strip_prefix = "rules_nixpkgs-674766086cda88976394fbd608620740857e2535",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/674766086cda88976394fbd608620740857e2535.tar.gz"],
 )
 
 load(
@@ -15,28 +15,50 @@ load(
     "nixpkgs_package",
 )
 
-load(
-    "//purescript:repositories.bzl",
-    "purescript_repositories",
-)
-
 nixpkgs_local_repository(
     name = "nixpkgs",
-    nix_file = "//nixpkgs:default.nix",
+    nix_file = "//nix:nixpkgs.nix",
 )
 
 nixpkgs_package(
     name = "purescript",
-    repositories = {"nixpkgs": "@nixpkgs//:default.nix"},
+    repositories = {"nixpkgs": "@nixpkgs//:nixpkgs.nix"},
     attribute_path = "purescript",
 )
 
 nixpkgs_package(
     name = "tar",
-    repositories = {"nixpkgs": "@nixpkgs//:default.nix"},
+    repositories = {"nixpkgs": "@nixpkgs//:nixpkgs.nix"},
     attribute_path = "gnutar",
 )
 
+load(
+    "//purescript:repositories.bzl",
+    "purescript_repositories",
+)
+
 purescript_repositories()
+
+load(
+    "//purescript:nixpkgs.bzl",
+    "purescript_nixpkgs_packageset",
+    "purescript_nixpkgs_package",
+)
+
+purescript_nixpkgs_packageset(
+    name = "psc-package",
+    nix_file = "//nix:purescript-packages.nix",
+    base_attribute_path = "purescriptPackages",
+    repositories = {"nixpkgs": "@nixpkgs//:nixpkgs.nix"},
+)
+
+load(
+    "@psc-package-imports//:packages.bzl",
+    "purescript_import_packages",
+)
+
+purescript_import_packages(
+    base_attribute_path = "purescriptPackages",
+)
 
 register_toolchains("//tests:purescript")

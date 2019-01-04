@@ -12,5 +12,8 @@ purescript_bundle(
     srcs = [
         "Main.purs",
     ],
+    deps = [
+        "@psc-package//:prelude",
+    ],
     visibility = ["//visibility:public"],
 )

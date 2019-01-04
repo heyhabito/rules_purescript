@@ -17,6 +17,11 @@ purescript_toolchain(
         "@purescript//:bin",
         "@tar//:bin",
     ],
+
+    # This toolchain is morally test only, but we can't set it as such because
+    # there are non-test things that depend on it (e.g. the testing of
+    # PureScript Nixpkgs rules in WORKSPACE).
+    testonly = 0,
 )
 
 rule_test(
