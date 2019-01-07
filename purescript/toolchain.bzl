@@ -1,4 +1,4 @@
-"""Rules for defining PureScript toolchains"""
+"""Rules for defining PureScript toolchains."""
 
 _PURESCRIPT_TOOLS = [
     "purs",
@@ -23,14 +23,22 @@ _purescript_toolchain = rule(
     implementation = _purescript_toolchain_impl,
     attrs = {
         "compiler_flags": attr.string_list(
-            doc = "A set of flags that will be passed to the PureScript compiler on every invocation",
+            doc = """
+A set of flags that will be passed to the PureScript compiler on every
+invocation.
+""",
         ),
         "tools": attr.label_list(
-            doc = "The PureScript compiler and set of associated tools",
+            doc = """
+The PureScript compiler and set of associated tools.
+""",
             mandatory = True,
         ),
         "version": attr.string(
-            doc = "The version of your PureScript compiler. This much match the version reported by the compiler executable",
+            doc = """
+The version of your PureScript compiler. This much match the version reported
+by the compiler executable.
+""",
             mandatory = True,
         ),
     },
@@ -42,7 +50,16 @@ def purescript_toolchain(
     tools,
     compiler_flags = [],
     **kwargs):
-    """Declare a PureScript compiler toolchain."""
+    """Declare a PureScript compiler toolchain.
+
+    Args:
+        name: A unique name for this rule.
+        version: The version of your PureScript compiler. This much match the
+          version reported by the compiler executable.
+        tools: The PureScript compiler and set of associated tools.
+        compiler_flags: A set of flags that will be passed to the PureScript
+          compiler on every invocation.
+    """
 
     impl_name = name + "-impl"
     impl_label = ":" + impl_name
@@ -63,10 +80,10 @@ def purescript_toolchain(
     )
 
 def _purescript_check_required_tools(ctx):
-    """Check that the required tools are present
+    """Check that the required tools are present.
 
     Returns:
-        A struct of tools keyed by tool name
+        A struct of tools keyed by tool name.
     """
 
     tools_struct_dict = {}
@@ -87,10 +104,11 @@ def _purescript_check_required_tools(ctx):
     return struct(**tools_struct_dict)
 
 def _purescript_check_compiler_version(ctx):
-    """Check that a given toolchain declares a single compiler and that it has the correct version
+    """Check that a given toolchain declares a single compiler and that it has
+    the correct version.
 
     Returns:
-        A File containing the version reported by the single declared compiler
+        A File containing the version reported by the single declared compiler.
     """
 
     compiler = None

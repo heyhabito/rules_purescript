@@ -14,8 +14,8 @@ purescript_toolchain(
     name = "purescript",
     version = "0.12.1",
     tools = [
-        "@purescript//:bin",
-        "@tar//:bin",
+        "@nixpkgs_purescript//:bin",
+        "@nixpkgs_tar//:bin",
     ],
 
     # This toolchain is morally test only, but we can't set it as such because

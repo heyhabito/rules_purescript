@@ -1,5 +1,7 @@
+"""Rules for defining PureScript package sets backed by Nixpkgs."""
+
 load(
-    "@bazel_skylib//:lib.bzl",
+    "@bazel_skylib//:lib/dicts.bzl",
     "dicts",
 )
 
@@ -15,7 +17,17 @@ def purescript_nixpkgs_packageset(
     repositories = {},
     **kwargs):
 
-    """Defines a set of external repositories for a Nixpkgs-backed PureScript package set"""
+    """Defines a set of external repositories for a Nixpkgs-backed PureScript
+    package set.
+
+    Args:
+        name: A unique name for this rule.
+        nix_file: The `.nix` file that provides a set of PureScript packages.
+        base_attribute_path: The path into the expression built by `nix_file`
+          that represents the PureScript package set.
+        repositories: A dictionary mapping Nixpkgs repositories to their
+          definitions.
+    """
 
     repositories = dicts.add(
         {
@@ -50,7 +62,7 @@ def purescript_nixpkgs_package(
     repositories = {},
     **kwargs):
 
-    """Defines an external repository for a PureScript package supplied by Nixpkgs"""
+    """Defines an external repository for a PureScript package supplied by Nixpkgs."""
 
     repositories = dicts.add(
         {
@@ -94,7 +106,7 @@ targets()
     )
 
 def _purescript_nixpkgs_nixopts(packageset_name, nix_file, repositories):
-    """Creates a set of nix-build arguments from the given arguments"""
+    """Creates a set of nix-build arguments from the given arguments."""
 
     repositories_nix_set = "{"
     for name, path in repositories.items():
@@ -116,7 +128,11 @@ def _purescript_nixpkgs_nixopts(packageset_name, nix_file, repositories):
     ]
 
 def _purescript_nixpkgs_packageset_aliases(repository_ctx):
-    """Implements the purescript_nixpkgs_packageset_aliases repository rule"""
+    """Implements the purescript_nixpkgs_packageset_aliases repository rule.
+
+    Defines a set of aliases for the given package set in the current
+    repository.
+    """
 
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
@@ -139,6 +155,8 @@ alias(
 purescript_nixpkgs_packageset_aliases = repository_rule(
     implementation = _purescript_nixpkgs_packageset_aliases,
     attrs = {
-        "packages": attr.string_list(),
+        "packages": attr.string_list(
+            doc = "The list of packages to be aliased.",
+        ),
     },
 )

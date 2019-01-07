@@ -1,17 +1,23 @@
-"""Functions for building context useful to PureScript rules"""
+"""Functions for building context useful to PureScript rules."""
 
 load(
-    "@bazel_skylib//:lib.bzl",
+    "@bazel_skylib//:lib/paths.bzl",
     "paths",
 )
 
 PureScriptContext = provider(
-    doc = "Information about a PureScript build context/environment",
-    fields = [
-        "src_root",
-        "toolchain",
-        "tools",
-    ],
+    doc = "Information about a PureScript build context/environment.",
+    fields = {
+        "src_root": """
+The path to the directory where the PureScript module hierarchy begins.
+""",
+        "toolchain": """
+The PureScript toolchain resolved for the rule.
+""",
+        "tools": """
+The tools belonging to the PureScript toolchain resolved for the rule.
+""",
+    },
 )
 
 def purescript_context(ctx):

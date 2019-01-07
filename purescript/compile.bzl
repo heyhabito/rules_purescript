@@ -1,4 +1,4 @@
-"""Rules for compiling PureScript code
+"""Rules for compiling PureScript code.
 
 Currently the PureScript compiler operates in an "all-at-once" mode, in which
 compiling any piece of code requires providing all the sources of its
@@ -26,8 +26,12 @@ that any future compilations will have both sets of files available.
 """
 
 load(
-    "@bazel_skylib//:lib.bzl",
+    "@bazel_skylib//:lib/paths.bzl",
     "paths",
+)
+
+load(
+    "@bazel_skylib//:lib/shell.bzl",
     "shell",
 )
 
@@ -38,45 +42,58 @@ load(
 
 _ATTRS = struct(
     entry_point_module = attr.string(
-        doc = "The name of the module to be used as an entry point",
+        doc = """
+The name of the module to be used as an entry point.
+""",
         mandatory = True,
     ),
     main_module = attr.string(
-        doc = "If supplied, code will be generated to run the `main` function in this module",
+        doc = """
+If supplied, code will be generated to run the `main` function in this module.
+""",
     ),
     srcs = attr.label_list(
+        doc = """
+The PureScript source files that make up this target.
+""",
         allow_files = [
             ".purs",
         ],
-        doc = "The PureScript source files that make up this target",
         mandatory = True,
     ),
     foreign_srcs = attr.label_list(
+        doc = """
+The JavaScript source files that provide foreign function interfaces for this
+target.
+""",
         allow_files = [
             ".js",
         ],
-        doc = "The JavaScript source files that provide foreign function interfaces for this target",
     ),
     src_strip_prefix = attr.string(
-        doc = "The directory in which the PureScript module hierarchy starts",
+        doc = """
+The directory in which the PureScript module hierarchy starts.
+""",
     ),
     deps = attr.label_list(
+        doc = """
+A list of other PureScript libraries that this target depends on.
+""",
         allow_files = [
             ".purs-package",
         ],
-        doc = "A list of other PureScript libraries that this target depends on",
     ),
 )
 
 PureScriptBundleInfo = provider(
-    doc = "Information about a PureScript bundle",
-    fields = [
-        "bundle",
-    ],
+    doc = "Information about a PureScript bundle.",
+    fields = {
+        "bundle": "The bundle `File`.",
+    },
 )
 
 def _purescript_bundle_impl(ctx):
-    """Implements the purescript_bundle rule"""
+    """Implements the purescript_bundle rule."""
 
     ps = purescript_context(ctx)
     purs = ps.tools.purs
@@ -147,6 +164,9 @@ def _purescript_bundle_impl(ctx):
 
 purescript_bundle = rule(
     implementation = _purescript_bundle_impl,
+    doc = """
+Build a bundle from PureScript sources.
+""",
     attrs = {
         "entry_point_module": _ATTRS.entry_point_module,
         "main_module": _ATTRS.main_module,
@@ -164,18 +184,28 @@ purescript_bundle = rule(
 )
 
 PureScriptLibraryInfo = provider(
-    doc = "Information about a PureScript library",
-    fields = [
-        "package",
-        "srcs",
-        "foreign_srcs",
-        "transitive_srcs",
-        "transitive_foreign_srcs",
-    ],
+    doc = "Information about a PureScript library.",
+    fields = {
+        "package": """
+The package `File` containing the library's artifacts.
+""",
+        "srcs": """
+A `depset` of the library's PureScript source `File`s.
+""",
+        "foreign_srcs": """
+A `depset` of the library's foreign JavaScript source `File`s.
+""",
+        "transitive_srcs": """
+A transitive `depset` of the library's PureScript source `File`s.
+""",
+        "transitive_foreign_srcs": """
+A transitive `depset` of the library's foreign JavaScript source `Files`.
+""",
+    },
 )
 
 def _purescript_library_impl(ctx):
-    """Implements the purescript_library rule"""
+    """Implements the purescript_library rule."""
 
     ps = purescript_context(ctx)
     purs = ps.tools.purs
@@ -248,7 +278,8 @@ def _purescript_build_library(
     )
 
 def _purescript_process_ctx(ps, ctx):
-    """Processes a rule's context, building a list of inputs and transitive inputs"""
+    """Processes a rule's context, building a list of inputs and transitive
+    inputs."""
 
     deps_p = _purescript_process_deps(ctx)
 
@@ -279,7 +310,8 @@ def _purescript_process_ctx(ps, ctx):
     )
 
 def _purescript_process_deps(ctx):
-    """Aggregates the transitive information records of a rule's dependencies"""
+    """Aggregates the transitive information records of a rule's
+    dependencies."""
 
     packages = []
     transitive_srcs = []
@@ -300,6 +332,9 @@ def _purescript_process_deps(ctx):
 
 purescript_library = rule(
     implementation = _purescript_library_impl,
+    doc = """
+Build a library from PureScript sources.
+""",
     attrs = {
         "srcs": _ATTRS.srcs,
         "foreign_srcs": _ATTRS.foreign_srcs,
