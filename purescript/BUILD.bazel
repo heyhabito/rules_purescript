@@ -1,3 +1,7 @@
 exports_files([
+    # Bazel libraries.
     "purescript.bzl",
+
+    # Utilities and data files.
+    "repl.sh",
 ])

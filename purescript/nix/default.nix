@@ -69,8 +69,12 @@ let
                       )
 
                       native.filegroup(
-                          name = "src",
-                          srcs = native.glob(["src/**/*"]),
+                          name = "purs",
+                          srcs = native.glob(["src/**/*.purs"]) + [
+                              "@${ctx.attr.packageset_name}-package-" +
+                                  dep + "//:purs" for dep in DEPS
+                          ],
+                          visibility = ["//visibility:public"],
                       )
                   EOF
                 '';

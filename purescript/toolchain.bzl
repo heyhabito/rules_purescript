@@ -14,6 +14,7 @@ def _purescript_toolchain_impl(ctx):
             name = ctx.label.name,
             mode = ctx.var["COMPILATION_MODE"],
             tools = tools,
+            psci_support = ctx.attr.psci_support,
             compiler_flags = ctx.attr.compiler_flags,
             version_file = version_file
         ),
@@ -26,6 +27,11 @@ _purescript_toolchain = rule(
             doc = """
 A set of flags that will be passed to the PureScript compiler on every
 invocation.
+""",
+        ),
+        "psci_support": attr.label(
+            doc = """
+The .purs sources of the psci-support package, for loading REPLs.
 """,
         ),
         "tools": attr.label_list(
@@ -48,6 +54,7 @@ def purescript_toolchain(
     name,
     version,
     tools,
+    psci_support,
     compiler_flags = [],
     **kwargs):
     """Declare a PureScript compiler toolchain.
@@ -68,6 +75,7 @@ def purescript_toolchain(
         name = impl_name,
         version = version,
         tools = tools,
+        psci_support = psci_support,
         compiler_flags = compiler_flags,
         visibility = ["//visibility:public"],
         **kwargs

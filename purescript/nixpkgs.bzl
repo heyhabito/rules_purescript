@@ -145,6 +145,11 @@ alias(
     name = "{package}",
     actual = "@{packageset_name}-package-{package}//:pkg",
 )
+
+alias(
+    name = "{package}.purs",
+    actual = "@{packageset_name}-package-{package}//:purs",
+)
         """.format(
             package = package,
             packageset_name = repository_ctx.attr.name,

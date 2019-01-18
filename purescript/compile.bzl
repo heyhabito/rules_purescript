@@ -41,6 +41,7 @@ load(
 )
 
 _ATTRS = struct(
+    # Common public attributes.
     entry_point_module = attr.string(
         doc = """
 The name of the module to be used as an entry point.
@@ -83,6 +84,15 @@ A list of other PureScript libraries that this target depends on.
             ".purs-package",
         ],
     ),
+
+    # Common private attributes.
+    _repl_template = attr.label(
+        doc = """
+The template to be used for generating scripts which invoke PureScript REPLs.
+""",
+        default = Label("@com_habito_rules_purescript//purescript:repl.sh"),
+        allow_single_file = True,
+    ),
 )
 
 PureScriptBundleInfo = provider(
@@ -99,14 +109,17 @@ def _purescript_bundle_impl(ctx):
     purs = ps.tools.purs
     tar = ps.tools.tar
 
+    repl_template = ctx.file._repl_template
     entry_point_module = ctx.attr.entry_point_module
     bundle = ctx.outputs.bundle
 
     bundle_package = ctx.actions.declare_file("bundle.purs-package")
+    bundle_repl = ctx.actions.declare_file("bundle@repl")
 
     ctx_p = _purescript_process_ctx(ps, ctx)
 
     _purescript_build_library(
+        ps,
         ctx,
         mnemonic = "PureScriptBuildBundle",
         progress_message = "PureScriptBuildBundle {}".format(ctx.label),
@@ -114,6 +127,8 @@ def _purescript_bundle_impl(ctx):
         tar = tar,
         ctx_p = ctx_p,
         package = bundle_package,
+        repl_template = repl_template,
+        repl = bundle_repl,
     )
 
     if ctx.attr.main_module:
@@ -174,6 +189,8 @@ Build a bundle from PureScript sources.
         "foreign_srcs": _ATTRS.foreign_srcs,
         "src_strip_prefix": _ATTRS.src_strip_prefix,
         "deps": _ATTRS.deps,
+
+        "_repl_template": _ATTRS._repl_template,
     },
     outputs = {
         "bundle": "%{name}.js",
@@ -212,10 +229,13 @@ def _purescript_library_impl(ctx):
     tar = ps.tools.tar
 
     package = ctx.outputs.package
+    repl_template = ctx.file._repl_template
+    repl = ctx.outputs.repl
 
     ctx_p = _purescript_process_ctx(ps, ctx)
 
     _purescript_build_library(
+        ps,
         ctx,
         mnemonic = "PureScriptBuildLibrary",
         progress_message = "PureScriptBuildLibrary {}".format(ctx.label),
@@ -223,6 +243,8 @@ def _purescript_library_impl(ctx):
         tar = tar,
         ctx_p = ctx_p,
         package = package,
+        repl_template = repl_template,
+        repl = repl,
     )
 
     return [
@@ -236,13 +258,26 @@ def _purescript_library_impl(ctx):
     ]
 
 def _purescript_build_library(
+    ps,
     ctx,
     mnemonic,
     progress_message,
     purs,
     tar,
     ctx_p,
-    package):
+    package,
+    repl_template,
+    repl):
+
+    ctx.actions.expand_template(
+        template = repl_template,
+        output = repl,
+        substitutions = {
+            "{psci_support}": " ".join([f.path for f in ps.psci_support.files]),
+            "{library}": ctx_p.transitive_src_path_words,
+        },
+        is_executable = True,
+    )
 
     ctx.actions.run_shell(
         mnemonic = mnemonic,
@@ -340,9 +375,12 @@ Build a library from PureScript sources.
         "foreign_srcs": _ATTRS.foreign_srcs,
         "src_strip_prefix": _ATTRS.src_strip_prefix,
         "deps": _ATTRS.deps,
+
+        "_repl_template": _ATTRS._repl_template,
     },
     outputs = {
         "package": "%{name}.purs-package",
+        "repl": "%{name}@repl",
     },
     toolchains = [
         "@com_habito_rules_purescript//purescript:toolchain_type",

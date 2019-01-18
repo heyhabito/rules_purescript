@@ -17,6 +17,7 @@ purescript_toolchain(
         "@nixpkgs_purescript//:bin",
         "@nixpkgs_tar//:bin",
     ],
+    psci_support = "@psc-package//:psci-support.purs",
 
     # This toolchain is morally test only, but we can't set it as such because
     # there are non-test things that depend on it (e.g. the testing of

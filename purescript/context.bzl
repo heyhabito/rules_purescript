@@ -17,6 +17,9 @@ The PureScript toolchain resolved for the rule.
         "tools": """
 The tools belonging to the PureScript toolchain resolved for the rule.
 """,
+        "psci_support": """
+The .purs sources of the psci-support package, for loading REPLs.
+"""
     },
 )
 
@@ -39,4 +42,5 @@ def purescript_context(ctx):
         src_root = src_root,
         toolchain = toolchain,
         tools = toolchain.tools,
+        psci_support = toolchain.psci_support,
     )
