@@ -48,7 +48,6 @@ purescript_repositories()
 load(
     "//purescript:nixpkgs.bzl",
     "purescript_nixpkgs_packageset",
-    "purescript_nixpkgs_package",
 )
 
 purescript_nixpkgs_packageset(

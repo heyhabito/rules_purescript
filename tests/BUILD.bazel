@@ -28,35 +28,50 @@ purescript_toolchain(
 rule_test(
     name = "test-library-simple",
     size = "small",
-    generates = ["library-simple.purs-package"],
+    generates = [
+        "library-simple.purs-package",
+        "library-simple@repl",
+    ],
     rule = "//tests/library-simple",
 )
 
 rule_test(
     name = "test-library-dependencies",
     size = "small",
-    generates = ["library-dependencies.purs-package"],
+    generates = [
+        "library-dependencies.purs-package",
+        "library-dependencies@repl",
+    ],
     rule = "//tests/library-dependencies",
 )
 
 rule_test(
     name = "test-library-prefix",
     size = "small",
-    generates = ["library-prefix.purs-package"],
+    generates = [
+        "library-prefix.purs-package",
+        "library-prefix@repl",
+    ],
     rule = "//tests/library-prefix",
 )
 
 rule_test(
     name = "test-library-transitive",
     size = "small",
-    generates = ["library-transitive.purs-package"],
+    generates = [
+        "library-transitive.purs-package",
+        "library-transitive@repl"
+    ],
     rule = "//tests/library-transitive",
 )
 
 rule_test(
     name = "test-library-foreign",
     size = "small",
-    generates = ["library-foreign.purs-package"],
+    generates = [
+        "library-foreign.purs-package",
+        "library-foreign@repl"
+    ],
     rule = "//tests/library-foreign",
 )
 

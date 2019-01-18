@@ -269,11 +269,16 @@ def _purescript_build_library(
     repl_template,
     repl):
 
+    if ps.psci_support:
+        psci_support_files = " ".join([f.path for f in ps.psci_support.files])
+    else:
+        psci_support_files = ""
+
     ctx.actions.expand_template(
         template = repl_template,
         output = repl,
         substitutions = {
-            "{psci_support}": " ".join([f.path for f in ps.psci_support.files]),
+            "{psci_support}": psci_support_files,
             "{library}": ctx_p.transitive_src_path_words,
         },
         is_executable = True,

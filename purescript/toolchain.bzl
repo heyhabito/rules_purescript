@@ -54,7 +54,7 @@ def purescript_toolchain(
     name,
     version,
     tools,
-    psci_support,
+    psci_support = None,
     compiler_flags = [],
     **kwargs):
     """Declare a PureScript compiler toolchain.

@@ -1,5 +1,24 @@
 #!/usr/bin/env bash
 
+# REPL rules require psci-support sources to be available.
+if [ "{psci_support}" = "" ]
+then
+    cat <<EOF
+It looks like you are trying to run a REPL target without having configured
+the PSCi support package in your PureScript toolchain. To do this you'll need
+to ensure that the psci_support argument to purescript_toolchain is given a
+suitable Bazel target. For example, if you're using a packageset named
+@psc-package, you could use:
+
+purescript_toolchain(
+    ...,
+    psci_support = "@psc-package//:psci-support.purs",
+    ...,
+)
+EOF
+    exit 1
+fi
+
 # The BUILD_WORKSPACE_DIRECTORY is set by `bazel run`.
 if [ "$BUILD_WORKSPACE_DIRECTORY" = "" ]
 then
