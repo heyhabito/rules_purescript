@@ -5,3 +5,8 @@ exports_files([
     # Utilities and data files.
     "repl.sh",
 ])
+
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
