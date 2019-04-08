@@ -5,7 +5,6 @@
 
   cacert,
   fetchgit,
-  nix-prefetch-git,
   stdenv,
 
   ctx
