@@ -8,6 +8,7 @@ PureScript.
 [bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
 [nix]: https://nixos.org/nix
 [psc-package]: https://psc-package.readthedocs.io/en/latest/
+[psc-prefetch]: https://github.com/heyhabito/psc-prefetch/
 
 ## Requirements
 
@@ -125,11 +126,13 @@ register_toolchains("//:purescript")
 
 ## Configuring a packageset
 
-`rules_purescript` supports generating Bazel definitions for PureScript
-packagesets (as specified by [psc-package][psc-package]). Currently you can do
-this using:
+`rules_purescript` supports generating Bazel definitions for *a modified* version of PureScript
+packagesets (as specified by [psc-package][psc-package]), with a `sha256` field added to each package.
 
-* Nix
+### Psc-Prefetch
+In order for Nix to verify the downloaded package is correct it needs a hash for each package.
+This hash is checked against `nix-hash <directory> --type sha256 --base32` where directory is a checkout of the `repo` at the specified `version` (with submodules) with the `.git` directory removed.
+[Psc-Prefetch][psc-prefetch] is a tool that can enrich a given package set with the necessary hashes. 
 
 ### Using Nix
 
@@ -163,7 +166,7 @@ purescript_import_packages(
 
 The `nix_file` argument specifies a `.nix` file in the repository providing an
 expression representing a function from a Bazel context to a Nix set with a
-PureScript packageset in the attribute named by `base_attribute_path`:
+PureScript packageset (with hashes) in the attribute named by `base_attribute_path`:
 
 `nix/purescript-packages.nix`:
 
@@ -178,8 +181,8 @@ let
 
   packagesJSON =
     builtins.fromJSON (builtins.readFile (builtins.fetchurl {
-      url = "https://raw.githubusercontent.com/purescript/package-sets/psc-0.12.1/packages.json";
-      sha256 = "0iy336bgz36snkxmrb4li6b9nnv0x4dx9gbcvnw5r2q9hzlx0zvj";
+      url = "https://raw.githubusercontent.com/heyhabito/package-sets/master/packages-with-sha256.json";
+      sha256 = "0km8pnvn5wlprwc18bw9vng47dang1hp8x24k73njc50l3fi6rhh";
     }));
 
 in {

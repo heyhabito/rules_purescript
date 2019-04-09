@@ -5,7 +5,6 @@
 
   cacert,
   fetchgit,
-  nix-prefetch-git,
   stdenv,
 
   ctx
@@ -17,68 +16,50 @@ let
       packageBuilds =
         lib.attrsets.mapAttrs
           (name: spec:
-            let
-              prefetch =
-                builtins.fromJSON (builtins.readFile (runCommand "prefetch-${name}"
-                  {
-                    SSL_CERT_FILE = "${cacert.out}/etc/ssl/certs/ca-bundle.crt";
-                    buildInputs = [
-                      nix-prefetch-git
-                    ];
-                  }
-                  ''
-                    nix-prefetch-git \
-                      --quiet \
-                      --fetch-submodules \
-                      --url ${spec.repo} \
-                      --rev ${spec.version} > $out
-                  ''));
+            stdenv.mkDerivation {
+              name = name;
+              version = spec.version;
+              src = fetchgit {
+                url = spec.repo;
+                rev = spec.version;
+                sha256 = spec.sha256;
+              };
+              phases = "installPhase";
+              installPhase = ''
+                mkdir -p $out/src
+                cp -r $src/src/. $out/src
 
-            in
-              stdenv.mkDerivation {
-                name = name;
-                version = spec.version;
-                src = fetchgit {
-                  url = spec.repo;
-                  rev = prefetch.rev;
-                  sha256 = prefetch.sha256;
-                };
-                phases = "installPhase";
-                installPhase = ''
-                  mkdir -p $out/src
-                  cp -r $src/src/. $out/src
+                cat > $out/BUILD.bzl <<EOF
+                load(
+                    "@com_habito_rules_purescript//purescript:purescript.bzl",
+                    "purescript_library",
+                )
 
-                  cat > $out/BUILD.bzl <<EOF
-                  load(
-                      "@com_habito_rules_purescript//purescript:purescript.bzl",
-                      "purescript_library",
-                  )
+                DEPS = ${"[" +
+                  lib.strings.concatMapStringsSep "," (d: "\"" + d + "\"")
+                    spec.dependencies + "]"}
 
-                  DEPS = ${"[" +
-                    lib.strings.concatMapStringsSep "," (d: "\"" + d + "\"")
-                      spec.dependencies + "]"}
+                def targets():
+                    purescript_library(
+                        name = "pkg",
+                        src_strip_prefix = "src",
+                        srcs = native.glob(["src/**/*.purs"]),
+                        foreign_srcs = native.glob(["src/**/*.js"]),
+                        deps = ["@${ctx.attr.packageset_name}-package-" + dep + "//:pkg" for dep in DEPS],
+                        visibility = ["//visibility:public"],
+                    )
 
-                  def targets():
-                      purescript_library(
-                          name = "pkg",
-                          src_strip_prefix = "src",
-                          srcs = native.glob(["src/**/*.purs"]),
-                          foreign_srcs = native.glob(["src/**/*.js"]),
-                          deps = ["@${ctx.attr.packageset_name}-package-" + dep + "//:pkg" for dep in DEPS],
-                          visibility = ["//visibility:public"],
-                      )
-
-                      native.filegroup(
-                          name = "purs",
-                          srcs = native.glob(["src/**/*.purs"]) + [
-                              "@${ctx.attr.packageset_name}-package-" +
-                                  dep + "//:purs" for dep in DEPS
-                          ],
-                          visibility = ["//visibility:public"],
-                      )
-                  EOF
-                '';
-              }
+                    native.filegroup(
+                        name = "purs",
+                        srcs = native.glob(["src/**/*.purs"]) + [
+                            "@${ctx.attr.packageset_name}-package-" +
+                                dep + "//:purs" for dep in DEPS
+                        ],
+                        visibility = ["//visibility:public"],
+                    )
+                EOF
+              '';
+            }
           )
           packagesJSON;
 

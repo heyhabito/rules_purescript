@@ -1,4 +1,4 @@
 import (fetchTarball {
   # Nixpkgs checkout from 2018-11-03.
-  url = "https://github.com/NixOS/nixpkgs/archive/01389f1ad6ecb894d2f20f390d944b1e70674a9e.tar.gz";
+  url = "https://github.com/NixOS/nixpkgs/archive/84b7bf85f45b658f956a607f0c1901fdae1cbfdb.tar.gz";
 })
