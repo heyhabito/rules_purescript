@@ -29,7 +29,7 @@ http_archive(
 )
 
 load(
-    "//purescript:repositories.bzl",
+    "@com_habito_rules_purescript//purescript:repositories.bzl",
     "purescript_repositories",
 )
 
@@ -108,6 +108,11 @@ nixpkgs_package(
 Now we can declare the toolchain in a `BUILD.bazel`:
 
 ```bzl
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_toolchain",
+)
+
 purescript_toolchain(
     name = "purescript",
     version = "0.12.1",
@@ -126,13 +131,18 @@ register_toolchains("//:purescript")
 
 ## Configuring a packageset
 
-`rules_purescript` supports generating Bazel definitions for *a modified* version of PureScript
-packagesets (as specified by [psc-package][psc-package]), with a `sha256` field added to each package.
+`rules_purescript` supports generating Bazel definitions for *a modified*
+version of PureScript packagesets (as specified by [psc-package][psc-package]),
+with a `sha256` field added to each package.
 
 ### Psc-Prefetch
-In order for Nix to verify the downloaded package is correct it needs a hash for each package.
-This hash is checked against `nix-hash <directory> --type sha256 --base32` where directory is a checkout of the `repo` at the specified `version` (with submodules) with the `.git` directory removed.
-[Psc-Prefetch][psc-prefetch] is a tool that can enrich a given package set with the necessary hashes. 
+
+In order for Nix to verify the downloaded package is correct it needs a hash
+for each package.  This hash is checked against `nix-hash <directory> --type
+sha256 --base32` where `directory is a checkout of the `repo` at the specified
+`version` (with submodules) with the `.git` directory removed.
+[Psc-Prefetch][psc-prefetch] is a tool that can enrich a given package set with
+the necessary hashes.
 
 ### Using Nix
 
@@ -143,7 +153,7 @@ describing a PureScript packageset:
 
 ```bzl
 load(
-    "//purescript:nixpkgs.bzl",
+    "@com_habito_rules_purescript//purescript:nixpkgs.bzl",
     "purescript_nixpkgs_packageset",
 )
 
@@ -216,6 +226,11 @@ purescript_library(
 ### Libraries
 
 ```bzl
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_library",
+)
+
 purescript_library(
     name = "library-name",
     src_strip_prefix = "src",
@@ -237,6 +252,11 @@ purescript_library(
 ### Bundles
 
 ```bzl
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_bundle",
+)
+
 purescript_bundle(
     name = "bundle-name",
     entry_point_module = "Main",

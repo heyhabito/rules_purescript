@@ -248,6 +248,9 @@ def _purescript_library_impl(ctx):
     )
 
     return [
+        DefaultInfo(
+            files = depset(transitive = [ctx_p.srcs, ctx_p.foreign_srcs]),
+        ),
         PureScriptLibraryInfo(
             package = package,
             srcs = ctx_p.srcs,
