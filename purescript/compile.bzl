@@ -26,12 +26,12 @@ that any future compilations will have both sets of files available.
 """
 
 load(
-    "@bazel_skylib//:lib/paths.bzl",
+    "@bazel_skylib//lib:paths.bzl",
     "paths",
 )
 
 load(
-    "@bazel_skylib//:lib/shell.bzl",
+    "@bazel_skylib//lib:shell.bzl",
     "shell",
 )
 

@@ -1,7 +1,7 @@
 """Functions for building context useful to PureScript rules."""
 
 load(
-    "@bazel_skylib//:lib/paths.bzl",
+    "@bazel_skylib//lib:paths.bzl",
     "paths",
 )
 

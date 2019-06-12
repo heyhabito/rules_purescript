@@ -1,7 +1,7 @@
 """Rules for defining PureScript package sets backed by Nixpkgs."""
 
 load(
-    "@bazel_skylib//:lib/dicts.bzl",
+    "@bazel_skylib//lib:dicts.bzl",
     "dicts",
 )
 
