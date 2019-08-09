@@ -24,7 +24,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "com_habito_rules_purescript",
-    strip_prefix = "rules_nixpkgs-$VERSION",
+    strip_prefix = "rules_purescript-$VERSION",
     urls = ["https://github.com/heyhabito/rules_purescript/archive/$VERSION.tar.gz"],
 )
 
